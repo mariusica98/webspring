@@ -1,0 +1,9 @@
+webSpring\utils\IOActions.class
+webSpring\SpringBootWebApplication.class
+webSpring\entity\Malicious.class
+webSpring\entity\Person.class
+webSpring\model\PersonViewModel.class
+webSpring\PersonController.class
+webSpring\repository\PersonRepository.class
+webSpring\repository\MaliciousRepository.class
+webSpring\HeaderFooterPageEvent.class

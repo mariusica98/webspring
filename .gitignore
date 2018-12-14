@@ -21,3 +21,8 @@
 
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
+webSpring/target/classes/templates/insertActions.html
+webSpring/target/classes/application.properties
+webSpring/target/classes/META-INF/maven/com.person/person/pom.xml
+webSpring/target/classes/META-INF/maven/com.person/person/pom.properties
+webSpring/target/classes/META-INF/MANIFEST.MF

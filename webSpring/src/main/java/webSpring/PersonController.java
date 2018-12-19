@@ -19,7 +19,12 @@ import java.util.List;
 
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 
+import org.apache.commons.collections4.ResettableIterator;
+import org.aspectj.weaver.tools.cache.AsynchronousFileCacheBacking.ClearCommand;
+import org.hibernate.event.spi.ClearEvent;
+import org.hibernate.event.spi.DeleteEvent;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -29,6 +34,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.w3c.dom.Text;
 
 import com.itextpdf.text.BaseColor;
 import com.itextpdf.text.Chunk;
@@ -67,15 +73,14 @@ public class PersonController {
 	}
 
 	@PostMapping("/person")
-	public String formProcess(@ModelAttribute PersonViewModel personViewModel, @RequestParam("submit") String reqParam,
-			HttpServletResponse response) {
+	public String formProcess(Model model,@ModelAttribute PersonViewModel personViewModel, @RequestParam("submit") String reqParam,
+			HttpServletResponse response, HttpSession session) {
 		List<Person> searchedPersons = new ArrayList<>();
 		List<Malicious> maliciousPersons = new ArrayList<>();
 
 		switch (reqParam) {
 		case "Search":
 			String searchedName = personViewModel.getName().trim();
-
 			if (!searchedName.equals("")) {
 				Iterable<Person> persons = personRepository.findAll();
 				for (Person person : persons) {
@@ -100,7 +105,12 @@ public class PersonController {
 		case "Download":
 			loadToDatabase("https://www.bis.doc.gov/dpl/dpl.txt");
 			return "insert";
-
+			
+		case "Reset":
+			personViewModel.setName("");
+			personViewModel.setSearchedList(new ArrayList<>());
+			return "insert";
+		
 		case "Export":
 			try {
 				downloadFile(response, "output/txt.pdf");
@@ -116,7 +126,7 @@ public class PersonController {
 
 	private void exportToPDF(List<Person> searchedPersons, List<Malicious> maliciousPersons, String fileName,
 			String searchedName) {
-		Document pdfDoc = new Document(PageSize.A4);
+		Document pdfDoc = new Document(PageSize.A4,13,13,100,90);
 
 		Font cellFontBold = FontFactory.getFont("Times Roman", 8, BaseColor.BLACK);
 		cellFontBold.setStyle(Font.BOLD);
@@ -128,22 +138,20 @@ public class PersonController {
 		try {
 			HeaderFooterPageEvent event = new HeaderFooterPageEvent();
 			PdfWriter.getInstance(pdfDoc, new FileOutputStream(fileName)).setPageEvent(event);
-			;
+			
 			pdfDoc.open();
 
 			Paragraph title = new Paragraph("Information about: " + searchedName, textFont);
-			pdfDoc.add(Chunk.NEWLINE);
 			title.setSpacingBefore(60f);
 			title.setSpacingAfter(30f);
 			pdfDoc.add(title);
+			
 
 			if (!searchedPersons.isEmpty()) {
 				PdfPTable table = new PdfPTable(12);
 				table.setWidths(new int[] { 10, 10, 5, 3, 3, 5, 5, 5, 3, 4, 8, 8 });
 				table.setWidthPercentage(100);
-				// table.setSpacingBefore(0f);
-				// table.setSpacingAfter(0f);
-
+				
 				table.addCell(setCell(cellFontBold, "NAME"));
 				table.addCell(setCell(cellFontBold, "STREET ADDRESS"));
 				table.addCell(setCell(cellFontBold, "CITY"));
@@ -162,6 +170,7 @@ public class PersonController {
 						table.addCell(setCell(cellFont, s));
 					}
 				}
+				table.setHeaderRows(1);
 				pdfDoc.add(table);
 			}
 
@@ -183,6 +192,7 @@ public class PersonController {
 				}
 				pdfDoc.add(table);
 			}
+			
 
 		} catch (FileNotFoundException | DocumentException e) {
 			e.printStackTrace();
